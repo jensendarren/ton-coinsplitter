@@ -25,6 +25,10 @@ export type DistributorConfig = {
     seed: number
 };
 
+export const Opcodes = {
+    update_data: 0xfa2a76a0,
+};
+
 const DistributorShareValue: DictionaryValue<DistributorShare> = {
     serialize: (src: DistributorShare, builder) => {
         builder
@@ -97,12 +101,10 @@ export class Distributor implements Contract {
     }
 
     async sendUpdateData(provider: ContractProvider, via: Sender, newData: Cell) {
-        const opcodeString = crc32c(Buffer.from("op::update_data")).toString();
-
         await provider.internal(via, {
             value: toNano('0.05'),
             sendMode: SendMode.PAY_GAS_SEPARATLY,
-            body: beginCell().storeUint(Number(opcodeString), 32).storeRef(newData).endCell()
+            body: beginCell().storeUint(Opcodes.update_data, 32).storeRef(newData).endCell()
         })
     }
 

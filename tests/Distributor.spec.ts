@@ -90,4 +90,29 @@ describe('Distributor', () => {
             body: (body) => body.equals(commentBody('second half'))
         });
     })
+
+    it('should handle data update', async () => {
+        const blockchain = await Blockchain.create();
+
+        const owner = await blockchain.treasury('owner');
+
+        const distributor = blockchain.openContract(
+            Distributor.createFromConfig({
+                owner: owner.address,
+                processingPrice: toNano('0.05'),
+                shares: [{address: randomAddress(), factor: 1, base: 1, comment: ''}],
+                seed: 0
+            }, code)
+        );
+
+        const emptyCell = new Cell();
+
+        await distributor.sendUpdateData(owner.getSender(), emptyCell);
+
+        const state = (await blockchain.getContract(distributor.address)).accountState;
+
+        if(state?.type !== 'active') throw new Error('contract state should be active');
+
+        expect(state.state.data?.equals(emptyCell)).toBeTruthy();
+    })
 });

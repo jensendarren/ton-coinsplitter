@@ -45,7 +45,7 @@ global int ctx_seed; ;; seed used to yield an original address be able to deploy
 
     ;; first define a set of Admin methods (not performing any coinsplitting yet!) ...
     ;; check that the sender is the owner and that the message body is not empty
-    if (equal_slice_bits(sender_addr, ctx_owner) & (- in_msg_body.slice_empty?())) {
+    if (equal_slice_bits(sender_addr, ctx_owner) & (~ in_msg_body.slice_empty?())) {
         int op = in_msg_body~load_uint(32);
 
         ;; allows the sender to change the data 
