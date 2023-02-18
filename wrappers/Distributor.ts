@@ -132,7 +132,7 @@ export class Distributor implements Contract {
     }
     
     async getOwner(provider: ContractProvider) {
-        const result = await provider.get('get_owner', []);
+        const result = await provider.get('owner', []);
         return result.stack.readAddress();
     }
 
