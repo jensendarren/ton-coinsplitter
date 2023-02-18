@@ -1,5 +1,123 @@
 #include "imports/stdlib.fc";
+#include "message.fc";
 
+;; contract that splits the gramm balance of coins sent to the contract to the allocated shareholders
+
+;; declare variables globally to avoid passing them around in the contract
+global slice ctx_owner; ;; the owner
+global int ctx_processing_price; ;; the fee to process this transaction (deduced from the sent coins)
+global cell ctx_shares; ;; shares marked as a cell type but actually underlying is a dictionary
+global int ctx_seed; ;; seed used to yield an original address be able to deploy multiple version instances 
+
+() load_data() impure {
+    ;; get_data returns the root data cell of the smart contract
+	var ds = get_data().begin_parse();
+
+	ctx_owner = ds~load_msg_addr();
+	ctx_processing_price = ds~load_coins();
+	ctx_shares = ds~load_dict();
+	ctx_seed = ds~load_uint(16); ;; specifiy the amount of bits we want to read for the int
+
+	ds.end_parse();
+}
+
+;; my_balance -> Smart contract balance (in nanoTons)
+;; msg_value -> Incoming message balance (in nanoTons)
+;; in_msg_full -> Cell with an incoming message
+;; in_msg_body -> Incoming message body, slice type
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    ;; if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+    ;;     return ();
+    ;; }
 
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4); ;; the first four bits of serialized message contain certain flags, one of which indicates whether the message is bounced
+    ;; a message is bounced when a contract receives a bounceable message and throws during its processing
+    ;; the bounced message is then returned to sender with `bounced` bit set, this is a way to handle errors in TON
+
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+    
+    slice sender_addr = cs~load_msg_addr();
+
+    load_data(); ;; here we populate the storage variables
+
+    ;; first define a set of Admin methods (not performing any coinsplitting yet!) ...
+    ;; check that the sender is the owner and that the message body is not empty
+    if (equal_slice_bits(sender_addr, ctx_owner) & (- in_msg_body.slice_empty?())) {
+        int op = in_msg_body~load_uint(32);
+
+        ;; allows the sender to change the data 
+        if (op == "op::update_data"c) {
+            set_data(in_msg_body~load_ref());
+        }
+
+        ;; allows the sender to update the contract code on the fly
+        if (op == "op::update_code"c) {
+            set_code(in_msg_body~load_ref());
+        }
+
+        if (op == "op::topup"c) {
+            ;; simple coin trancfer so just accept them
+            ;; might use this to keep paying the storage fees to have this contract on chain
+            return();
+        }
+        return();
+    }
+
+    ;; calculate the amount of coins available to split which is based on the current contract balance less the transaction fee
+    var value_to_share = my_balance - ctx_processing_price;
+
+    if(value_to_share <= 0) {
+        ;; if there is nothing to share then do nothing and return!
+        return();
+    }
+
+    int i = -1;
+
+    do {
+        ;; use udict helpers from stdlib since we know that ctx_shares is a dict
+        ;; udict_get_next requires the cell which contains the dict data (ctx_shares)
+        ;; a key length (32) and the item idex / pivot (i) - returns -1 when no more records
+        (i, slice share, int notfail) = ctx_shares.udict_get_next?(32, i);
+
+        if(notfail) {
+            ;; the values in the dict (share) are slices
+            var address = share~load_msg_addr();
+            var factor = share~load_uint(16);
+            var base = share~load_uint(16);
+            ;; use load_ref since string literals not supported in TVM
+            ;; so load_ref reads a reference to another cell 
+            var comment = share~load_ref(); 
+
+            ;; https://ton.org/docs/develop/func/builtins#integer-operations
+            var share_value = muldiv(value_to_share, factor, base);
+
+            msg::send_text(
+                address,
+                share_value,
+                comment.begin_parse(),
+                msg::send_mode::default
+            );
+        }
+
+
+
+    } until (- notfail);
+
+}
+
+int processing_price() method_id {
+    load_data();
+    return ctx_processing_price; 
+}
+
+slice owner() method_id {
+    load_data();
+    return ctx_owner;
+}
+
+cell config() method_id {
+    return get_data();
 }
