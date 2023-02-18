@@ -102,9 +102,7 @@ global int ctx_seed; ;; seed used to yield an original address be able to deploy
             );
         }
 
-
-
-    } until (- notfail);
+    } until (~ notfail);
 
 }
 

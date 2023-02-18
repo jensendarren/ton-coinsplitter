@@ -10,7 +10,7 @@ const msg::send_mode::destroy_if_zero = 32;
     int value,
     slice content,
     int mode
-) {
+) impure {
     ;; if we want to send a message, we first need to construct it
     ;; message serialization in most cases may be reduced to
     var msg = begin_cell()
