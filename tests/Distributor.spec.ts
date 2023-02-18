@@ -115,4 +115,54 @@ describe('Distributor', () => {
 
         expect(state.state.data?.equals(emptyCell)).toBeTruthy();
     })
+
+    it('should handle code update', async () => {
+        const blockchain = await Blockchain.create();
+
+        const owner = await blockchain.treasury('owner');
+
+        const distributor = blockchain.openContract(
+            Distributor.createFromConfig({
+                owner: owner.address,
+                processingPrice: toNano('0.05'),
+                shares: [{address: randomAddress(), factor: 1, base: 1, comment: ''}],
+                seed: 0
+            }, code)
+        );
+
+        const emptyCell = new Cell();
+
+        await distributor.sendUpdateCode(owner.getSender(), emptyCell);
+
+        const state = (await blockchain.getContract(distributor.address)).accountState;
+
+        if(state?.type !== 'active') throw new Error('contract state should be active');
+
+        expect(state.state.code?.equals(emptyCell)).toBeTruthy();
+    })
+
+    it('should handle topup', async () => {
+        const blockchain = await Blockchain.create();
+
+        const owner = await blockchain.treasury('owner');
+
+        const value = toNano('0.05');
+
+        const distributor = blockchain.openContract(
+            Distributor.createFromConfig({
+                owner: owner.address,
+                processingPrice: 0n,
+                shares: [{address: randomAddress(), factor: 1, base: 1, comment: ''}],
+                seed: 0
+            }, code)
+        );
+
+        const balanceBefore = await distributor.getBalance();
+        
+        await distributor.sendTopup(owner.getSender(), value);
+        
+        const balanceAfter = await distributor.getBalance();
+
+        expect(balanceAfter > balanceBefore).toBeTruthy();
+    })
 });

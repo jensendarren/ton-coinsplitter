@@ -27,6 +27,8 @@ export type DistributorConfig = {
 
 export const Opcodes = {
     update_data: 0xfa2a76a0,
+    update_code: 0x20ccb55b,
+    topup: 0x59da2019,
 };
 
 const DistributorShareValue: DictionaryValue<DistributorShare> = {
@@ -109,22 +111,18 @@ export class Distributor implements Contract {
     }
 
     async sendUpdateCode(provider: ContractProvider, via: Sender, newCode: Cell) {
-        const opcodeString = crc32c(Buffer.from("op::update_code")).toString();
-        
         await provider.internal(via, {
             value: toNano('0.05'),
             sendMode: SendMode.PAY_GAS_SEPARATLY,
-            body: beginCell().storeUint(Number(opcodeString), 32).storeRef(newCode).endCell()
+            body: beginCell().storeUint(Opcodes.update_code, 32).storeRef(newCode).endCell()
         })
     }
 
     async sendTopup(provider: ContractProvider, via: Sender, value: bigint) {
-        const opcodeString = crc32c(Buffer.from("op::topup")).toString();
-        
         await provider.internal(via, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATLY,
-            body: beginCell().storeUint(Number(opcodeString), 32).endCell()
+            body: beginCell().storeUint(Opcodes.topup, 32).endCell()
         })
     }
 
