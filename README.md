@@ -1,3 +1,9 @@
+# TON FunC Coinsplitter Example
+
+This example is taken from [this screencast](https://www.binance.com/hu/live/video?roomId=2120136).
+
+The contract is deployed on [testnet here](https://testnet.tonscan.org/address/EQDnBM9zWmEBGal1-3uuOTyx0_72ZxOER43K1m7iw8IaMa-K#source) using the wallet `EQBO_BKSeVRZzRhfuj3hqF-ez4g3T0af7xXCk0cve35ps83v`.
+
 # TON project template (RFC)
 
 Starter template for a new TON project - FunC contracts, unit tests, compilation and deployment scripts.
