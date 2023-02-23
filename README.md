@@ -4,6 +4,63 @@ This example is taken from [this screencast](https://www.binance.com/hu/live/vid
 
 The contract is deployed on [testnet here](https://testnet.tonscan.org/address/EQDnBM9zWmEBGal1-3uuOTyx0_72ZxOER43K1m7iw8IaMa-K#source) using the wallet `EQBO_BKSeVRZzRhfuj3hqF-ez4g3T0af7xXCk0cve35ps83v`.
 
+## Fift
+
+An example of using Fift is if you want to build a new wallet, then you can run:
+
+```
+fift -s ~/workspace/ton/ton/crypto/smartcont/new-wallet.fif 0 my_wallet_name
+```
+
+Example of usig Fift to create a message envelope to send Toncoins to a new wallet
+
+```
+fift -s ~/workspace/ton/ton/crypto/smartcont/testgiver.fif 0QAu6bT9Twd8myIygMNXY9-e2rC0GsINNvQAlnfflcOv4uVb 0x0002 10 dadou_wallet-query
+```
+
+Note that `0QAu6bT9Twd8myIygMNXY9-e2rC0GsINNvQAlnfflcOv4uVb` is the address of the test giver contract and `0x0002` is the seqno (see below how to use Liteclient to get that number), and `10` is the amouont of Toncoins to send to the wallet `dadou_wallet`.
+
+## Liteclient
+
+To use the lite-client you need to install the binary as [shown here](https://ton.org/docs/develop/smart-contracts/environment/installation#1-download).
+
+Then you need to download the config either for [mainnet](https://ton.org/global-config.json) or [testnet](https://ton.org/testnet-global.config.json).
+
+You can now start the lite-client in terminal like so:
+
+```
+lite-client -C testnet-global.config.json
+```
+
+You can inspect the state of a contract by following [these steps](https://ton.org/docs/develop/howto/step-by-step#2-inspecting-the-state-of-a-smart-contract).
+
+You can deploy this using the lite-client using the `sendfile` command:
+
+```
+sendfile new-wallet-query.boc
+```
+
+Now this will NOT work becuase you need to fund the contract _before_ it is deployed :) For that we need to ask the test giver contract for test Toncoin.
+
+```
+last
+runmethod kf_8uRo6OBbQ97jCx2EIuKm8Wmt6Vb15-KsQHFLbKSMiYIny seqno
+```
+
+
+You create an external message to the test giver asking it to send another message to your (uninitialized) smart contract carrying a specified amount of test Toncoin:
+
+```
+fift -s ~/workspace/ton/ton/crypto/smartcont/testgiver.fif 0QAu6bT9Twd8myIygMNXY9-e2rC0GsINNvQAlnfflcOv4uVb 0x0002 10 dadou_wallet-query
+```
+
+Now use Lite Client to send that message:
+
+```
+sendfile dadou_wallet-query
+```
+
+
 # TON project template (RFC)
 
 Starter template for a new TON project - FunC contracts, unit tests, compilation and deployment scripts.
