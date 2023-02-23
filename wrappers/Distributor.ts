@@ -73,7 +73,7 @@ export function decodeConfig(cell: Cell) {
     let slice = cell.beginParse();
 
     return {
-        owner: slice.loadAddress(),
+        owner: slice.loadAddress().toString(),
         processingPrice: slice.loadCoins(),
         shares: slice.loadDict(Dictionary.Keys.Uint(32), DistributorShareValue).values(),
         seed: slice.loadUint(16)
@@ -136,7 +136,7 @@ export class Distributor implements Contract {
     }
 
     async getConfig(provider: ContractProvider) {
-        const configCell = await (await provider.get('get_config', [])).stack.readCell();
+        const configCell = await (await provider.get('config', [])).stack.readCell();
         return decodeConfig(configCell);
     }
 

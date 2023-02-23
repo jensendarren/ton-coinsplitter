@@ -165,4 +165,33 @@ describe('Distributor', () => {
 
         expect(balanceAfter > balanceBefore).toBeTruthy();
     })
+
+    it('should be possible to get the data via the config message', async () => {
+        const blockchain = await Blockchain.create();
+        const owner = await blockchain.treasury('owner');
+
+        const distributor = blockchain.openContract(
+            Distributor.createFromConfig({
+                owner: owner.address,
+                processingPrice: 0n,
+                seed: 0,
+                shares: [
+                    { address: randomAddress(), factor: 1, base: 2, comment: 'testing config' },
+                    { address: randomAddress(), factor: 1, base: 2, comment: 'testing again!' }
+                ]
+            }, code)
+        );
+    
+        await distributor.sendDeploy(owner.getSender(), toNano('0.05'));
+
+        const decodedConfig = await distributor.getConfig()
+        
+        const expectedConfig = {
+            owner: owner.address.toString(),
+            processingPrice: 0n,
+            seed: 0
+        }
+    
+        expect(decodedConfig).toMatchObject(expectedConfig);
+    })
 });
